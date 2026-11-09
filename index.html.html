@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今天吃什麼？</title>
+  <style>
+    /* 全站基本設定 */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      color: #2f332d;
+      background: linear-gradient(135deg, #fff8e8, #eaf4e5);
+    }
+
+    .app {
+      width: 100%;
+      max-width: 560px;
+      padding: 32px;
+      background: #ffffff;
+      border: 1px solid #e5eadf;
+      border-radius: 24px;
+      box-shadow: 0 12px 36px rgba(55, 75, 45, 0.12);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      text-align: center;
+      font-size: clamp(28px, 5vw, 36px);
+    }
+
+    .subtitle {
+      margin: 0 0 28px;
+      text-align: center;
+      color: #747a70;
+      line-height: 1.6;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 170px;
+      padding: 14px;
+      resize: vertical;
+      border: 1px solid #ccd5c4;
+      border-radius: 12px;
+      font: inherit;
+      font-size: 16px;
+      line-height: 1.8;
+      background: #fcfdfb;
+      color: #2f332d;
+    }
+
+    textarea:focus {
+      outline: 3px solid #dcebd3;
+      border-color: #668b55;
+    }
+
+    .hint {
+      margin: 8px 0 18px;
+      color: #747a70;
+      font-size: 13px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px 18px;
+      border: 0;
+      border-radius: 12px;
+      background: #527b43;
+      color: white;
+      font: inherit;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    button:hover {
+      background: #416534;
+    }
+
+    button:active {
+      transform: scale(0.99);
+    }
+
+    /* 抽籤結果區 */
+    .result {
+      margin-top: 24px;
+      padding: 22px 16px;
+      text-align: center;
+      background: #f4f8ef;
+      border: 1px solid #e1ead9;
+      border-radius: 16px;
+    }
+
+    .result-title {
+      margin: 0 0 10px;
+      color: #65735d;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    #resultText {
+      min-height: 42px;
+      margin: 0;
+      overflow-wrap: anywhere;
+      color: #35552b;
+      font-size: clamp(24px, 5vw, 32px);
+      font-weight: 800;
+    }
+
+    #statusText {
+      min-height: 24px;
+      margin: 10px 0 0;
+      color: #73796d;
+      font-size: 13px;
+    }
+
+    @media (max-width: 480px) {
+      .app {
+        padding: 24px 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>🍽️ 今天吃什麼？</h1>
+    <p class="subtitle">把選項交給命運，今天就輕鬆決定！</p>
+
+    <label for="optionsInput">你的餐點清單（每行一個選項）</label>
+    <textarea id="optionsInput" aria-describedby="inputHint">便當
+麵
+咖哩
+水餃</textarea>
+    <p class="hint" id="inputHint">空白行會自動忽略，相同的選項只會保留一個。</p>
+
+    <button id="drawButton" type="button">幫我選！</button>
+
+    <section class="result" aria-live="polite" aria-atomic="true">
+      <p class="result-title">✨ 今日幸運餐點</p>
+      <p id="resultText">等你來抽籤！</p>
+      <p id="statusText">目前有 4 個預設選項</p>
+    </section>
+  </main>
+
+  <script>
+    // 取得頁面上的輸入區、按鈕與結果顯示區
+    const optionsInput = document.getElementById("optionsInput");
+    const drawButton = document.getElementById("drawButton");
+    const resultText = document.getElementById("resultText");
+    const statusText = document.getElementById("statusText");
+
+    // 整理選項：去除每行前後空白、空白行，以及完全相同的重複項目
+    function getValidOptions() {
+      const lines = optionsInput.value.split(/\r?\n/);
+
+      return [...new Set(
+        lines
+          .map(option => option.trim())
+          .filter(option => option.length > 0)
+      )];
+    }
+
+    // 按下按鈕後，從有效選項中等機率抽出一個
+    function drawOption() {
+      const options = getValidOptions();
+
+      // 清單沒有有效選項時，顯示提示並停止抽籤
+      if (options.length === 0) {
+        resultText.textContent = "請先輸入至少一個選項";
+        statusText.textContent = "輸入餐點後，再按一次「幫我選」";
+        return;
+      }
+
+      // 每個有效選項的索引都有相同機率被選中
+      const randomIndex = Math.floor(Math.random() * options.length);
+      resultText.textContent = options[randomIndex];
+      statusText.textContent = `已從 ${options.length} 個不同的有效選項中抽出結果`;
+    }
+
+    // 綁定按鈕點擊事件
+    drawButton.addEventListener("click", drawOption);
+  </script>
+</body>
+</html>
